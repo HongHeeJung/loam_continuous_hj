@@ -68,14 +68,17 @@ float imuShiftFromStartXCur, imuShiftFromStartYCur, imuShiftFromStartZCur;
 float imuVeloFromStartXCur, imuVeloFromStartYCur, imuVeloFromStartZCur;
 
 double imuTime[imuQueLength] = {0};
+//Gyro
 float imuRoll[imuQueLength] = {0};
 float imuPitch[imuQueLength] = {0};
 float imuYaw[imuQueLength] = {0};
 
+//Accelerate
 float imuAccX[imuQueLength] = {0};
 float imuAccY[imuQueLength] = {0};
 float imuAccZ[imuQueLength] = {0};
 
+//Angular Velocity
 float imuVeloX[imuQueLength] = {0};
 float imuVeloY[imuQueLength] = {0};
 float imuVeloZ[imuQueLength] = {0};
@@ -183,6 +186,7 @@ void AccumulateIMUShift()
   }
 }
 
+// laser cloud handler 1
 void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudIn2)
 {
   if (!systemInited) {
