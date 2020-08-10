@@ -83,6 +83,7 @@ float imuVeloX[imuQueLength] = {0};
 float imuVeloY[imuQueLength] = {0};
 float imuVeloZ[imuQueLength] = {0};
 
+//Shift
 float imuShiftX[imuQueLength] = {0};
 float imuShiftY[imuQueLength] = {0};
 float imuShiftZ[imuQueLength] = {0};
@@ -91,6 +92,7 @@ float imuShiftZ[imuQueLength] = {0};
 //double imuAccuPitch = 0;
 double imuAccuYaw = 0;
 
+//Odmetry
 void ShiftToStartIMU()
 {
   float x1 = cos(imuYawStart) * imuShiftFromStartXCur - sin(imuYawStart) * imuShiftFromStartZCur;
@@ -106,6 +108,7 @@ void ShiftToStartIMU()
   imuShiftFromStartZCur = z2;
 }
 
+//Velocity
 void VeloToStartIMU()
 {
   float x1 = cos(imuYawStart) * imuVeloFromStartXCur - sin(imuYawStart) * imuVeloFromStartZCur;
@@ -121,6 +124,7 @@ void VeloToStartIMU()
   imuVeloFromStartZCur = z2;
 }
 
+//Transform the center of Lidar to Coordinate system of IMU
 void TransformToStartIMU(pcl::PointXYZHSV *p)
 {
   float x1 = cos(imuRollCur) * p->x - sin(imuRollCur) * p->y;
@@ -338,15 +342,19 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudIn2)
     }
   }
 
+  //Initailize IMU
   if (!imuInited) {
+    //Gyro
     imuRollStart = imuRollCur;
     imuPitchStart = imuPitchCur;
     imuYawStart = imuYawCur;
 
+    //Acceleration
     imuVeloXStart = imuVeloXCur;
     imuVeloYStart = imuVeloYCur;
     imuVeloZStart = imuVeloZCur;
 
+    //Geomagnetic
     imuShiftXStart = imuShiftXCur;
     imuShiftYStart = imuShiftYCur;
     imuShiftZStart = imuShiftZCur;
