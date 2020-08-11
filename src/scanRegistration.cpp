@@ -92,7 +92,7 @@ float imuShiftZ[imuQueLength] = {0};
 //double imuAccuPitch = 0;
 double imuAccuYaw = 0;
 
-//Odmetry
+//Odometry
 void ShiftToStartIMU()
 {
   float x1 = cos(imuYawStart) * imuShiftFromStartXCur - sin(imuYawStart) * imuShiftFromStartZCur;
@@ -190,7 +190,7 @@ void AccumulateIMUShift()
   }
 }
 
-// laser cloud handler 1
+// Start the first "laser cloud handler" - Synchronize the scan cloud to IMU position
 void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudIn2)
 {
   if (!systemInited) {
@@ -648,6 +648,7 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudIn2)
   }
   skipFrameCount++;
 }
+// END "laser cloud handler"
 
 void imuHandler(const sensor_msgs::Imu::ConstPtr& imuIn)
 {
