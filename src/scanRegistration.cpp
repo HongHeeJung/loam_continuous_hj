@@ -1,3 +1,8 @@
+/*
+  LEARNING
+  2020.08.13 laserCloudHandler
+*/
+
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
@@ -227,6 +232,7 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudIn2)
   pcl::PointXYZ laserPointFirst = laserCloudIn->points[0];
   pcl::PointXYZ laserPointLast = laserCloudIn->points[cloudInSize - 1];
 
+  // 3D Coordinate Geometry
   float rangeFirst = sqrt(laserPointFirst.x * laserPointFirst.x + laserPointFirst.y * laserPointFirst.y
                  + laserPointFirst.z * laserPointFirst.z);
   laserPointFirst.x /= rangeFirst;
