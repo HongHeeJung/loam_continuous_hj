@@ -1,3 +1,10 @@
+/*
+  (3-2)
+  - Store the value of transform before&after mapped
+  - Get updated odometry
+  - Publish 'after mapped odometry' & 'laser cloud' for veiwing on RVIZ
+*/
+
 #include <math.h>
 #include <time.h>
 #include <stdio.h>

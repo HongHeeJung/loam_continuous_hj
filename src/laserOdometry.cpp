@@ -1,3 +1,9 @@
+/*
+  (2)
+  - Get odometry
+  - Match up odometry with Laser points 
+*/
+
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
