@@ -1,11 +1,3 @@
-/*
-  (1)
-  - Get point cloud from Lidar
-  - Get 9-DoF from IMU (Gyro, Acceleration, Geomagnetic)
-  - Get velocity & Shift
-  - Count time stamp of point cloud
-*/
-
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
@@ -235,6 +227,7 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudIn2)
   pcl::PointXYZ laserPointFirst = laserCloudIn->points[0];
   pcl::PointXYZ laserPointLast = laserCloudIn->points[cloudInSize - 1];
 
+  // 3D Coordinate Geometry
   float rangeFirst = sqrt(laserPointFirst.x * laserPointFirst.x + laserPointFirst.y * laserPointFirst.y
                  + laserPointFirst.z * laserPointFirst.z);
   laserPointFirst.x /= rangeFirst;
