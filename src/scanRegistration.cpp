@@ -1,3 +1,10 @@
+/*  
+  (1)
+  - Get point cloud from Lidar
+  - Get 9-DoF from IMU (Gyro, Acceleration, Geomagnetic)
+  - Get velocity & Shift
+  - Count time stamp of point cloud
+*/
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
