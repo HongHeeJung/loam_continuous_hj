@@ -4,6 +4,7 @@
   - Get updated odometry
   - Publish 'after mapped odometry' & 'laser cloud' for veiwing on RVIZ
   2020.08.18 /camera_init_2 = odomBefMapped.header.frame_id + laserCloudSurround2.header.frame_id -> rviz/TF
+  2020.08.19 get roll, pitch, yaw by using "tf library"
 */
 
 #include <math.h>
