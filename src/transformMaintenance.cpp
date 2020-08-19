@@ -219,6 +219,8 @@ int main(int argc, char** argv)
                                      ("/aft_mapped_to_init_2", 5, odomAftMappedHandler);
 
   ros::Publisher pubLaserOdometry2 = nh.advertise<nav_msgs::Odometry> ("/cam_to_init_2", 5);
+  
+  // for identify the "frame_id and child_frame_id" of odometry
   pubLaserOdometry2Pointer = &pubLaserOdometry2;
   laserOdometry2.header.frame_id = "/camera_init_2";
   laserOdometry2.child_frame_id = "/camera";

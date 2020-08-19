@@ -251,6 +251,8 @@ int main(int argc, char** argv)
   //ros::Publisher pub4 = nh.advertise<sensor_msgs::PointCloud2> ("/pc4", 1);
 
   ros::Publisher pubOdomBefMapped = nh.advertise<nav_msgs::Odometry> ("/bef_mapped_to_init_2", 5);
+  
+  // for identify the "frame_id and child_frame_id" of odometry
   nav_msgs::Odometry odomBefMapped;
   odomBefMapped.header.frame_id = "/camera_init_2";
   odomBefMapped.child_frame_id = "/bef_mapped";
