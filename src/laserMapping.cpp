@@ -1,10 +1,10 @@
 /*
-  (3-2)
+  (3-1)(3-3)
   - Store the value of transform before&after mapped
   - Get updated odometry
   - Publish 'after mapped odometry' & 'laser cloud' for veiwing on RVIZ
   2020.08.18 /camera_init_2 = odomBefMapped.header.frame_id + laserCloudSurround2.header.frame_id -> rviz/TF
-  2020.08.19 get roll, pitch, yaw by using "tf library"
+  2020.08.19 get roll, pitch, yaw by using "tf library" & main() 전까지 완료
 */
 
 #include <math.h>
@@ -77,6 +77,13 @@ float transformTobeMapped[6] = {0};
 float transformBefMapped[6] = {0};
 float transformAftMapped[6] = {0};
 
+/* 
+Transform laserOdometry and odometry associated map 
+using laserOdometry(->transformSum[]), odomBefMapped(->transformBefMapped[]), odomAftMapped(->transformAftMapped[]).
+(Equal to "transformAssociateToMap()" function of "transformMaintenance.cpp" file)
+(EXCEPT the result)
+The result is "transformTobeMapped[]" to update transformBefMapped[] & transformAftMapped[] (<-transformUpdate()).
+*/
 void transformAssociateToMap()
 {
   float x1 = cos(transformSum[1]) * (transformBefMapped[3] - transformSum[3]) 
@@ -166,6 +173,9 @@ void transformAssociateToMap()
                          - (-sin(transformTobeMapped[1]) * x2 + cos(transformTobeMapped[1]) * z2);
 }
 
+/*
+Update "transformBefMapped[]" and "transformAftMapped[]".
+*/
 void transformUpdate()
 {
   //for (int i = 0; i < 3; i++) {
@@ -178,6 +188,9 @@ void transformUpdate()
   }
 }
 
+/*
+Make color using "transformTobeMapped[]".
+*/
 void pointAssociateToMap(pcl::PointXYZHSV *pi, pcl::PointXYZHSV *po)
 {
   float x1 = cos(transformTobeMapped[2]) * pi->x
@@ -200,6 +213,9 @@ void pointAssociateToMap(pcl::PointXYZHSV *pi, pcl::PointXYZHSV *po)
   po->v = pi->v;
 }
 
+/*
+Flag(newLaserCloudLast) to alert that "laserCloudLast2" message from "laserOdometry.cpp" file is updated.
+*/
 void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLast2)
 {
   timeLaserCloudLast = laserCloudLast2->header.stamp.toSec();
@@ -210,6 +226,11 @@ void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLas
   newLaserCloudLast = true;
 }
 
+/*
+Get "laserOdometry" message and Save it to "transformSum[]" array.
+Flag(newLaserOdometry) to alert that "laserOdometry" message from "laserOdometry.cpp" file is updated.
+(Different from "laserOdometryHandler()" function of "transformMaintenance.cpp" file)
+*/
 void laserOdometryHandler(const nav_msgs::Odometry::ConstPtr& laserOdometry)
 {
   timeLaserOdometry = laserOdometry->header.stamp.toSec();
@@ -284,7 +305,10 @@ int main(int argc, char** argv)
   bool status = ros::ok();
   while (status) {
     ros::spinOnce();
-
+    
+    /*
+    if [ "laserCloudLast2" and "laserOdometry" is updated ] and [ the gap between point cloud and odometry is under 0.005sec ]
+    */
     if (newLaserCloudLast && newLaserOdometry && fabs(timeLaserCloudLast - timeLaserOdometry) < 0.005) {
       newLaserCloudLast = false;
       newLaserOdometry = false;

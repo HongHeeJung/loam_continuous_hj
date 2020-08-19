@@ -1,6 +1,7 @@
 /*
-  (3-1)
-  - Transform the point cloud for mapping
+  (3-2)
+  - Transform the point cloud and odometry for mapping
+  2020.08.19. Done
 */
 
 #include <math.h>
@@ -45,6 +46,13 @@ tf::TransformBroadcaster *tfBroadcaster2Pointer = NULL;
 nav_msgs::Odometry laserOdometry2;
 tf::StampedTransform laserOdometryTrans2;
 
+/*
+To make "laserOdometryTran2" message, transform laserOdometry and odometry associated map 
+using laserOdometry(->transformSum[]), odomBefMapped(->transformBefMapped[]), odomAftMapped(->transformAftMapped[])
+(Equal to "transformAssociateToMap()" function of "laserMapping.cpp" file)
+(EXCEPT the result)
+The result is transformMapped[] to create "laserOdometryTran2" message (<-laserOdometryHandler())
+*/
 void transformAssociateToMap()
 {
   float x1 = cos(transformSum[1]) * (transformBefMapped[3] - transformSum[3])
@@ -132,6 +140,12 @@ void transformAssociateToMap()
                      - (-sin(transformMapped[1]) * x2 + cos(transformMapped[1]) * z2);
 }
 
+/*
+Get "laserOdometry" message and Save it to "transformSum[]" array
+Save "laserOdometry2" message from "transformMapped[]" array
+Send "laserOdometryTrans2" message by using "tfBroadcaster"
+(Different from "laserOdometryHandler()" function of "laserMapping.cpp" file)
+*/
 void laserOdometryHandler(const nav_msgs::Odometry::ConstPtr& laserOdometry)
 {
   if (fabs(timeOdomBefMapped - timeOdomAftMapped) < 0.005) {
@@ -170,6 +184,9 @@ void laserOdometryHandler(const nav_msgs::Odometry::ConstPtr& laserOdometry)
   }
 }
 
+/*
+Get "odomBefMapped" message form "bef_mapped_to_init_2" topic of "laserMapping.cpp" file.
+*/
 void odomBefMappedHandler(const nav_msgs::Odometry::ConstPtr& odomBefMapped)
 {
   timeOdomBefMapped = odomBefMapped->header.stamp.toSec();
@@ -187,6 +204,9 @@ void odomBefMappedHandler(const nav_msgs::Odometry::ConstPtr& odomBefMapped)
   transformBefMapped[5] = odomBefMapped->pose.pose.position.z;
 }
 
+/*
+Get "odomAftMapped" message form "aft_mapped_to_init_2" topic of "laserMapping.cpp" file.
+*/
 void odomAftMappedHandler(const nav_msgs::Odometry::ConstPtr& odomAftMapped)
 {
   timeOdomAftMapped = odomAftMapped->header.stamp.toSec();
