@@ -41,6 +41,7 @@ double timeLaserOdometry;
 bool newLaserCloudLast = false;
 bool newLaserOdometry = false;
 
+// Variables related to cubic spaces for storing laser pointcloud feature points
 const int laserCloudCenWidth = 5;
 const int laserCloudCenHeight = 5;
 const int laserCloudCenDepth = 5;
@@ -254,7 +255,7 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "laserMapping");
   ros::NodeHandle nh;
-
+  
   ros::Subscriber subLaserCloudLast2 = nh.subscribe<sensor_msgs::PointCloud2> 
                                        ("/laser_cloud_last_2", 2, laserCloudLastHandler);
 
@@ -290,6 +291,7 @@ int main(int argc, char** argv)
   pcl::PointXYZHSV pointOri, pointSel, pointProj, coeff;
   pcl::PointXYZI pointSurround;
 
+  // For color image on point clouds
   cv::Mat matA0(5, 3, CV_32F, cv::Scalar::all(0));
   cv::Mat matB0(5, 1, CV_32F, cv::Scalar::all(-1));
   cv::Mat matX0(3, 1, CV_32F, cv::Scalar::all(0));
@@ -310,15 +312,23 @@ int main(int argc, char** argv)
     if [ "laserCloudLast2" and "laserOdometry" is updated ] and [ the gap between point cloud and odometry is under 0.005sec ]
     */
     if (newLaserCloudLast && newLaserOdometry && fabs(timeLaserCloudLast - timeLaserOdometry) < 0.005) {
+
+      /*
+      "newLaserCloudLast" and "newLaserOdometry" are flags(boolean). 
+      "LaserCloudLast" is the pointer of the real data.
+      */
       newLaserCloudLast = false;
       newLaserOdometry = false;
 
+      // Create "transformTobeMapped[]"
       transformAssociateToMap();
 
+      // Colored Point Clouds
       pcl::PointXYZHSV pointOnZAxis;
       pointOnZAxis.x = 0.0;
       pointOnZAxis.y = 0.0;
       pointOnZAxis.z = 10.0;
+      // Make color using "transformTobeMapped[]"
       pointAssociateToMap(&pointOnZAxis, &pointOnZAxis);        
 
       int centerCubeI = int((transformTobeMapped[3] + 10.0) / 20.0) + laserCloudCenWidth;
@@ -328,10 +338,12 @@ int main(int argc, char** argv)
           centerCubeJ < 0 || centerCubeJ >= laserCloudHeight || 
           centerCubeK < 0 || centerCubeK >= laserCloudDepth) {
 
+        //Update "transformBefMapped[]" and "transformAftMapped[]".
         transformUpdate();
         continue;
       }
 
+      /*==================== Mapping Algorithm Start ====================*/
       int laserCloudValidNum = 0;
       int laserCloudSurroundNum = 0;
       for (int i = centerCubeI - 1; i <= centerCubeI + 1; i++) {
@@ -345,6 +357,7 @@ int main(int argc, char** argv)
               float centerY = 20.0 * (j - laserCloudCenHeight);
               float centerZ = 20.0 * (k - laserCloudCenDepth);
 
+              // Make a FOV of Points around centerX, centerY, centerZ.
               bool isInLaserFOV = false;
               for (int ii = -1; ii <= 1; ii += 2) {
                 for (int jj = -1; jj <= 1; jj += 2) {
@@ -353,10 +366,13 @@ int main(int argc, char** argv)
                     float cornerY = centerY + 10.0 * jj;
                     float cornerZ = centerZ + 10.0 * kk;
 
+                    // Check if the point in the FOV.
                     float check = 100.0 
+                                // Created with odometry Point Clouds
                                 + (transformTobeMapped[3] - cornerX) * (transformTobeMapped[3] - cornerX) 
                                 + (transformTobeMapped[4] - cornerY) * (transformTobeMapped[4] - cornerY)
                                 + (transformTobeMapped[5] - cornerZ) * (transformTobeMapped[5] - cornerZ)
+                                // Colored Point Clouds
                                 - (pointOnZAxis.x - cornerX) * (pointOnZAxis.x - cornerX) 
                                 - (pointOnZAxis.y - cornerY) * (pointOnZAxis.y - cornerY)
                                 - (pointOnZAxis.z - cornerZ) * (pointOnZAxis.z - cornerZ);
@@ -368,6 +384,7 @@ int main(int argc, char** argv)
                 }
               }
 
+              // Save the index of the valid laser clouds to "laserCloudValidInd[]" array.
               if (isInLaserFOV) {
                 laserCloudValidInd[laserCloudValidNum] = i + laserCloudWidth * j 
                                                        + laserCloudWidth * laserCloudHeight * k;
@@ -381,12 +398,21 @@ int main(int argc, char** argv)
         }
       }
 
+      /*==================== Mapping Algorithm - "Select feature points" Start ====================*/
+      /* 
+      By using the index of valid laser clouds("laserCloudValidInd[]"),
+      Count the number of "laser cloud" updated on the map.
+      */
       laserCloudFromMap->clear();
       for (int i = 0; i < laserCloudValidNum; i++) {
         *laserCloudFromMap += *laserCloudArray[laserCloudValidInd[i]];
       }
       int laserCloudFromMapNum = laserCloudFromMap->points.size();
 
+      /*
+      Select Feature points from map.
+      "laserCloudCornerFromMap" is the sharp edges and "laseCloudSurFromMap" is the planar surface patches.
+      */
       laserCloudCornerFromMap->clear();
       laserCloudSurfFromMap->clear();
       for (int i = 0; i < laserCloudFromMapNum; i++) {
@@ -398,8 +424,13 @@ int main(int argc, char** argv)
         }
       }
 
+      /*
+      Select Feature points from laser cloud Last.
+      "laserCloudCornerFromMap" is the sharp edges and "laseCloudSurFromMap" is the planar surface patches.
+      */
       laserCloudCorner->clear();
       laserCloudSurf->clear();
+      // "laserCloudLast" is pcl::PointCloud<pcl::PointXYZHSV>::Ptr so that it is pointing the real data.
       int laserCloudLastNum = laserCloudLast->points.size();
       for (int i = 0; i < laserCloudLastNum; i++) {
         if (fabs(laserCloudLast->points[i].v - 2) < 0.005 || 
@@ -409,9 +440,13 @@ int main(int argc, char** argv)
           laserCloudSurf->push_back(laserCloudLast->points[i]);
         }
       }
+      /*==================== Mapping Algorithm - "Select feature points" End ====================*/
 
       laserCloudCorner2->clear();
-      pcl::VoxelGrid<pcl::PointXYZHSV> downSizeFilter;
+
+      /*==================== Mapping Algorithm - "Filtering the Point Clouds" Start ====================*/
+      //The map cloud is downsized by a "Voxel grid filter".
+      pcl::VoxelGrid<pcl::PointXYZHSV> downSizeFilter; 
       downSizeFilter.setInputCloud(laserCloudCorner);
       downSizeFilter.setLeafSize(0.05, 0.05, 0.05);
       downSizeFilter.filter(*laserCloudCorner2);
@@ -421,9 +456,11 @@ int main(int argc, char** argv)
       downSizeFilter.setLeafSize(0.1, 0.1, 0.1);
       downSizeFilter.filter(*laserCloudSurf2);
 
+      // Update "laserCloudLast".
       laserCloudLast->clear();
       *laserCloudLast = *laserCloudCorner2 + *laserCloudSurf2;
       laserCloudLastNum = laserCloudLast->points.size();
+      /*==================== Mapping Algorithm - "Filtering the Point Clouds" End ====================*/
 
       if (laserCloudSurfFromMap->points.size() > 500) {
 
@@ -689,7 +726,10 @@ int main(int argc, char** argv)
           }
         }
       }
+      /*========== Mapping Algorithm End ==========*/
 
+      //Update "transformBefMapped[]" and "transformAftMapped[]".
+      //Which is updated before Mapping Algorithm started
       transformUpdate();
 
       for (int i = 0; i < laserCloudLastNum; i++) {
@@ -737,7 +777,10 @@ int main(int argc, char** argv)
         *laserCloudCubePointer = *laserCloudCorner2 + *laserCloudSurf2;
       }
 
+      // "laserCloudSurround" is the final Point Clouds for vewing on RVIZ.
+      // Clear "laserCloudSurround".
       laserCloudSurround->clear();
+      // Update it using PointXYZI Struct "pointSurround".
       for (int i = 0; i < laserCloudSurroundNum; i++) {
          pcl::PointCloud<pcl::PointXYZHSV>::Ptr laserCloudCubePointer = 
                                                 laserCloudArray[laserCloudSurroundInd[i]];
@@ -751,6 +794,7 @@ int main(int argc, char** argv)
          }
       }
 
+      // Use a pointer to publish "laserCloudSurround" data on "laserCloudSurround2" message.
       sensor_msgs::PointCloud2 laserCloudSurround2;
       pcl::toROSMsg(*laserCloudSurround, laserCloudSurround2);
       laserCloudSurround2.header.stamp = ros::Time().fromSec(timeLaserCloudLast);
