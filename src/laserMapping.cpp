@@ -320,10 +320,10 @@ int main(int argc, char** argv)
       newLaserCloudLast = false;
       newLaserOdometry = false;
 
-      // Create "transformTobeMapped[]"
+      // Create "transformTobeMapped[]".
       transformAssociateToMap();
 
-      // Colored Point Clouds
+      // Colored Point Clouds.
       pcl::PointXYZHSV pointOnZAxis;
       pointOnZAxis.x = 0.0;
       pointOnZAxis.y = 0.0;
@@ -331,6 +331,7 @@ int main(int argc, char** argv)
       // Make color using "transformTobeMapped[]"
       pointAssociateToMap(&pointOnZAxis, &pointOnZAxis);        
 
+      // Variables of centerCube.
       int centerCubeI = int((transformTobeMapped[3] + 10.0) / 20.0) + laserCloudCenWidth;
       int centerCubeJ = int((transformTobeMapped[4] + 10.0) / 20.0) + laserCloudCenHeight;
       int centerCubeK = int((transformTobeMapped[5] + 10.0) / 20.0) + laserCloudCenDepth;
@@ -343,9 +344,13 @@ int main(int argc, char** argv)
         continue;
       }
 
-      /*==================== Mapping Algorithm Start ====================*/
+
+      /*======================================== Mapping Algorithm Start ========================================*/
+
+      /*========== Mapping Algorithm - (1)"Set FOV and Make index of the valid laser clouds" Start ==========*/
       int laserCloudValidNum = 0;
       int laserCloudSurroundNum = 0;
+      // Around "centerCube", create FOV and then check if the laser cloud is vaild.
       for (int i = centerCubeI - 1; i <= centerCubeI + 1; i++) {
         for (int j = centerCubeJ - 1; j <= centerCubeJ + 1; j++) {
           for (int k = centerCubeK - 1; k <= centerCubeK + 1; k++) {
@@ -397,8 +402,9 @@ int main(int argc, char** argv)
           }
         }
       }
+      /*========== Mapping Algorithm - (1)"Set FOV and Make index of valid laser clouds" End ==========*/
 
-      /*==================== Mapping Algorithm - "Select feature points" Start ====================*/
+      /*==================== Mapping Algorithm - (2)"Select feature points" Start ====================*/
       /* 
       By using the index of valid laser clouds("laserCloudValidInd[]"),
       Count the number of "laser cloud" updated on the map.
@@ -440,11 +446,11 @@ int main(int argc, char** argv)
           laserCloudSurf->push_back(laserCloudLast->points[i]);
         }
       }
-      /*==================== Mapping Algorithm - "Select feature points" End ====================*/
+      /*==================== Mapping Algorithm - (2)"Select feature points" End ====================*/
 
       laserCloudCorner2->clear();
 
-      /*==================== Mapping Algorithm - "Filtering the Point Clouds" Start ====================*/
+      /*==================== Mapping Algorithm - (3)"Filtering the Point Clouds" Start ====================*/
       //The map cloud is downsized by a "Voxel grid filter".
       pcl::VoxelGrid<pcl::PointXYZHSV> downSizeFilter; 
       downSizeFilter.setInputCloud(laserCloudCorner);
@@ -460,8 +466,9 @@ int main(int argc, char** argv)
       laserCloudLast->clear();
       *laserCloudLast = *laserCloudCorner2 + *laserCloudSurf2;
       laserCloudLastNum = laserCloudLast->points.size();
-      /*==================== Mapping Algorithm - "Filtering the Point Clouds" End ====================*/
+      /*==================== Mapping Algorithm - (3)"Filtering the Point Clouds" End ====================*/
 
+      /*==================== Mapping Algorithm - (4)"Project the Point Clouds" Start ====================*/
       if (laserCloudSurfFromMap->points.size() > 500) {
 
         kdtreeCornerFromMap->setInputCloud(laserCloudCornerFromMap);
@@ -726,12 +733,14 @@ int main(int argc, char** argv)
           }
         }
       }
-      /*========== Mapping Algorithm End ==========*/
+      /*==================== Mapping Algorithm - (4)"Project the Point Clouds" End ====================*/
 
-      //Update "transformBefMapped[]" and "transformAftMapped[]".
-      //Which is updated before Mapping Algorithm started
+      // Update "transformBefMapped[]" and "transformAftMapped[]".
+      // Which is updated before Mapping Algorithm started
       transformUpdate();
-
+      
+      /*==================== Mapping Algorithm - (5)"Create cube" Start ====================*/
+      // Get cubeI, cubeJ, cubeK, cubeInd
       for (int i = 0; i < laserCloudLastNum; i++) {
         if (fabs(laserCloudLast->points[i].x) > 1.2 || fabs(laserCloudLast->points[i].y) > 1.2 ||
             fabs(laserCloudLast->points[i].z) > 1.2) {
@@ -793,6 +802,10 @@ int main(int argc, char** argv)
            laserCloudSurround->push_back(pointSurround);
          }
       }
+      /*==================== Mapping Algorithm - (5)"Create cube" End ====================*/
+
+      /*======================================== Mapping Algorithm End ========================================*/
+
 
       // Use a pointer to publish "laserCloudSurround" data on "laserCloudSurround2" message.
       sensor_msgs::PointCloud2 laserCloudSurround2;
