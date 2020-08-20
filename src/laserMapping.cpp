@@ -3,7 +3,7 @@
   - Store the value of transform before&after mapped
   - Get updated odometry
   - Publish 'after mapped odometry' & 'laser cloud' for veiwing on RVIZ
-  
+
   2020.08.18 /camera_init_2 = odomBefMapped.header.frame_id + laserCloudSurround2.header.frame_id -> rviz/TF
   2020.08.19 Get roll, pitch, yaw by using "tf library".
   2020.08.20 Done except "cube".
@@ -488,9 +488,12 @@ int main(int argc, char** argv)
                 fabs(laserCloudLast->points[i].z > 1.2)) {
 
               pointOri = laserCloudLast->points[i];
+
+              // Make color using "transformTobeMapped[]".
               pointAssociateToMap(&pointOri, &pointSel); 
               if (fabs(pointOri.v) < 0.05 || fabs(pointOri.v + 1) < 0.05) {
-
+                
+                // Make plane. <- cv::solve
                 kdtreeSurfFromMap->nearestKSearch(pointSel, 5, pointSearchInd, pointSearchSqDis);
 
                 if (pointSearchSqDis[4] < 1.0) {
@@ -556,6 +559,7 @@ int main(int argc, char** argv)
                 }
               } else {
 
+                // Make plane. <- cv::solve
                 kdtreeCornerFromMap->nearestKSearch(pointSel, 5, pointSearchInd, pointSearchSqDis);
                 
                 if (pointSearchSqDis[4] < 1.0) {
